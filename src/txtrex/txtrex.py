@@ -1,5 +1,6 @@
 import arrow
 import re
+import os
 from twisted.internet import reactor, defer
 from twisted.names import client, dns, error, server
 
@@ -68,6 +69,8 @@ class TxtRex(object):
         return False
 
     def _compose_answer(self, name, response):
+        response = response.replace('\n', '')
+        response = response.replace('\r', '')
         payload = dns.Record_TXT(bytes(response, 'utf-8'))
         answer = dns.RRHeader(
             name=name,
@@ -85,7 +88,7 @@ class TxtRex(object):
         response = self.route_to(path)
         if isinstance(response, str):
             response = [response]
-        answers = [self._compose_answer(name, line) for line in response]
+        answers = [self._compose_answer(name, line) for line in response if line.strip()]
         authority = []
         additional = []
         return answers, authority, additional
@@ -136,12 +139,16 @@ def is_recent(file_name):
     return False
 
 
+def read_post(file_path):
+    with open(file_path, 'r') as infile:
+        return infile.readlines()
+
+
 txtrex = TxtRex()
 
 
 @txtrex.route('index')
 def index(path):
-    import os
     response = ['Latest: rex.latest', 'Recent:']
     posts = []
 
@@ -150,6 +157,13 @@ def index(path):
         if 'comments' in dirs:
             dirs.remove('comments')
     return response + posts
+
+
+@txtrex.route('latest')
+def latest(path):
+    for root, dirs, files in os.walk('posts'):
+        latest = sorted(files).pop()
+        return read_post(os.path.join(root, latest))
 
 
 def main():
