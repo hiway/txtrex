@@ -1,3 +1,5 @@
+import traceback
+
 import arrow
 import re
 import os
@@ -28,7 +30,6 @@ class TxtRex(object):
 
     Every `*.comments.log` line contains:
         - timestamp
-        - client-ip
         - comment
 
     Examples:
@@ -157,6 +158,26 @@ def find_and_read_post(post_path):
     return 'Not found.'
 
 
+def save_comment(post_path, comment):
+    def write_to_file(file_path, comment_):
+        comment_ = comment_.replace('.', ' ')
+        with open(file_path, 'a') as outfile:
+            line = '{} {}'.format(arrow.utcnow().isoformat(), comment_)
+            outfile.write(line)
+        return comment_
+
+    try:
+        for root, dirs, files in os.walk('posts'):
+            for file_name in files:
+                if post_path in file_name:
+                    file_name_ = file_name.replace('.txt', '.comments.log')
+                    return write_to_file(os.path.join(root, 'comments', file_name_), comment)
+    except:
+        traceback.print_exc()
+        pass
+    return 'Not found.'
+
+
 txtrex = TxtRex()
 
 
@@ -181,6 +202,11 @@ def latest(path):
 
 @txtrex.route('*')
 def latest(path):
+    if '.comment.' in path:
+        spath = path.split('.comment.')
+        path_, comment = spath[0], spath[-1]
+        comment_ = save_comment(path_, comment)
+        return ['Posted:', comment_]
     return find_and_read_post(path)
 
 
