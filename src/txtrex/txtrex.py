@@ -2,10 +2,15 @@ from twisted.internet import reactor, defer
 from twisted.names import client, dns, error, server
 
 
-class DynamicResolver(object):
+class TxtRex(object):
     """
-    A resolver which calculates the answers to certain queries based on the
-    query type and name.
+    A resolver which presents a blog to the client through TXT records,
+    interactions and hyperlinking happens through dynamic, made-up TLDs.
+
+    Example:
+        dig @localhost -p 10053 workstation1.example.com TXT +short
+        "You are looking for: 172.0.2.1"
+
     """
     _pattern = 'workstation'
     _network = '172.0.2'
@@ -14,11 +19,10 @@ class DynamicResolver(object):
         """
         Check the query to determine if a dynamic response is required.
         """
-        if query.type == dns.A:
+        if query.type == dns.TXT:
             labels = str(query.name.name, 'utf-8').split('.')
             if labels[0].startswith(self._pattern):
                 return True
-
         return False
 
     def _doDynamicResponse(self, query):
@@ -31,7 +35,9 @@ class DynamicResolver(object):
         lastOctet = int(parts[1])
         answer = dns.RRHeader(
             name=name,
-            payload=dns.Record_A(address=bytes('%s.%s' % (self._network, lastOctet), 'utf-8')))
+            payload=dns.Record_TXT(bytes('You are looking for: %s.%s' % (self._network, lastOctet), 'utf-8')),
+            type=dns.TXT,
+        )
         answers = [answer]
         authority = []
         additional = []
@@ -53,7 +59,7 @@ def main():
     Run the server.
     """
     factory = server.DNSServerFactory(
-        clients=[DynamicResolver(), client.Resolver(resolv='/etc/resolv.conf')]
+        clients=[TxtRex(), client.Resolver(resolv='/etc/resolv.conf')]
     )
 
     protocol = dns.DNSDatagramProtocol(controller=factory)
