@@ -1,0 +1,5 @@
+The Internet Engineering Task Force published
+the original specifications in RFC 882 and RFC 883
+in November 1983.
+
+https://en.wikipedia.org/wiki/Domain_Name_System#History
