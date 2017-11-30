@@ -1,3 +1,5 @@
+import arrow
+import re
 from twisted.internet import reactor, defer
 from twisted.names import client, dns, error, server
 
@@ -29,30 +31,31 @@ class TxtRex(object):
         - comment
 
     Examples:
-        $ dig @127.0.0.1 -p 10053 TXT +short blog.latest
+        $ dig @127.0.0.1 -p 10053 TXT +short rex.latest
         "# Hello"
         "This is a test."
-        "Try: blog.index"
+        "Try: rex.index"
 
-        $ dig @127.0.0.1 -p 10053 TXT +short blog.index
-        "Latest: blog.latest"
+        $ dig @127.0.0.1 -p 10053 TXT +short rex.index
+        "Latest: rex.latest"
         "Recent:"
-        "   blog.hello"
-        "   blog.trying.something.silly"
+        "   rex.hello"
+        "   rex.trying.something.silly"
 
-        $ dig @127.0.0.1 -p 10053 TXT +short blog.trying.something.silly
+        $ dig @127.0.0.1 -p 10053 TXT +short rex.trying.something.silly
         "# Woohoo!"
         "This actually works?!"
 
-        $ dig @127.0.0.1 -p 10053 TXT +short blog.search.silly
+        $ dig @127.0.0.1 -p 10053 TXT +short rex.search.silly
         "# Search results for: silly"
-        "blog.trying.something.silly # Woohoo!"
+        "rex.trying.something.silly # Woohoo!"
 
-        $ dig @127.0.0.1 -p 10053 TXT +short blog.trying.something.silly.comment.this.is.going.too.far
+        $ dig @127.0.0.1 -p 10053 TXT +short rex.trying.something.silly.comment.this.is.going.too.far
         "Posted:"
         "this is going too far"
     """
     _pattern = 'rex'
+    _routes = {}
 
     def _dynamic_response_required(self, query):
         """
@@ -64,19 +67,25 @@ class TxtRex(object):
                 return True
         return False
 
-    def _do_dynamic_response(self, query):
-        """
-        Calculate the response to a query.
-        """
-        name = str(query.name.name, 'utf-8')
-        text = 'You asked for: {}'.format(name)
-        payload = dns.Record_TXT(bytes(text, 'utf-8'))
+    def _compose_answer(self, name, response):
+        payload = dns.Record_TXT(bytes(response, 'utf-8'))
         answer = dns.RRHeader(
             name=name,
             payload=payload,
             type=dns.TXT,
         )
-        answers = [answer]
+        return answer
+
+    def _do_dynamic_response(self, query):
+        """
+        Calculate the response to a query.
+        """
+        name = str(query.name.name, 'utf-8')
+        path = '.'.join(name.split('.')[1:])
+        response = self.route_to(path)
+        if isinstance(response, str):
+            response = [response]
+        answers = [self._compose_answer(name, line) for line in response]
         authority = []
         additional = []
         return answers, authority, additional
@@ -91,13 +100,64 @@ class TxtRex(object):
         else:
             return defer.fail(error.DomainError())
 
+    def route(self, path):
+        def wrapper(func):
+            self._routes.update({path: func})
+
+            def wrapped(path_):
+                return func(path_)
+
+            return wrapped
+
+        return wrapper
+
+    def route_to(self, path):
+        if path in self._routes:
+            return self._routes[path](path)
+        for _path in self._routes:
+            if path.startswith(_path):
+                return self._routes[_path](path)
+        return 'Not found.'
+
+
+def sanitize(file_name):
+    file_name = file_name.replace('.txt', '')
+    post_name = file_name.split('-').pop()
+    return post_name
+
+
+def is_recent(file_name):
+    pdate = re.match('(\d\d\d\d)(\d\d)(\d\d)', file_name.split('-')[0])
+    g = pdate.groups()
+    post_date = '{}-{}-{}'.format(g[0], g[1], g[2])
+    post_date = arrow.get(post_date)
+    if post_date.shift(days=30) > arrow.utcnow():
+        return True
+    return False
+
+
+txtrex = TxtRex()
+
+
+@txtrex.route('index')
+def index(path):
+    import os
+    response = ['Latest: rex.latest', 'Recent:']
+    posts = []
+
+    for root, dirs, files in os.walk('posts'):
+        posts = ['    rex.' + sanitize(p) for p in reversed(sorted(files)) if is_recent(p)]
+        if 'comments' in dirs:
+            dirs.remove('comments')
+    return response + posts
+
 
 def main():
     """
     Run the server.
     """
     factory = server.DNSServerFactory(
-        clients=[TxtRex(), client.Resolver(resolv='/etc/resolv.conf')]
+        clients=[txtrex, client.Resolver(resolv='/etc/resolv.conf')]
     )
 
     protocol = dns.DNSDatagramProtocol(controller=factory)
