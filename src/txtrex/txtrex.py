@@ -8,12 +8,11 @@ class TxtRex(object):
     interaction and hyperlinking happens through dynamic, made-up TLDs.
 
     Example:
-        dig @localhost -p 10053 workstation1.example.com TXT +short
-        "You are looking for: 172.0.2.1"
+        dig @127.0.0.1 -p 10053 TXT +short blog.latest
+        "You asked for: blog.latest"
 
     """
-    _pattern = 'workstation'
-    _network = '172.0.2'
+    _pattern = 'rex'
 
     def _dynamic_response_required(self, query):
         """
@@ -30,12 +29,11 @@ class TxtRex(object):
         Calculate the response to a query.
         """
         name = str(query.name.name, 'utf-8')
-        labels = name.split('.')
-        parts = labels[0].split(self._pattern)
-        last_octet = int(parts[1])
+        text = 'You asked for: {}'.format(name)
+        payload = dns.Record_TXT(bytes(text, 'utf-8'))
         answer = dns.RRHeader(
             name=name,
-            payload=dns.Record_TXT(bytes('You are looking for: %s.%s' % (self._network, last_octet), 'utf-8')),
+            payload=payload,
             type=dns.TXT,
         )
         answers = [answer]
