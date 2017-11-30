@@ -1,8 +1,9 @@
 import traceback
 
 import arrow
-import re
+import argparse
 import os
+import re
 from twisted.internet import reactor, defer
 from twisted.names import client, dns, error, server
 
@@ -214,14 +215,18 @@ def main():
     """
     Run the server.
     """
+    parser = argparse.ArgumentParser(description='Publish a "blog" using DNS TXT records.')
+    parser.add_argument('--port', action='store', dest='port', default=10053, type=int)
+    args = parser.parse_args()
+
     factory = server.DNSServerFactory(
         clients=[txtrex, client.Resolver(resolv='/etc/resolv.conf')]
     )
 
     protocol = dns.DNSDatagramProtocol(controller=factory)
 
-    reactor.listenUDP(10053, protocol)
-    reactor.listenTCP(10053, factory)
+    reactor.listenUDP(args.port, protocol)
+    reactor.listenTCP(args.port, factory)
 
     reactor.run()
 
