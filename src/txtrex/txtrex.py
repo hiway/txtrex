@@ -201,7 +201,7 @@ def latest(path):
 
 
 @txtrex.route('*')
-def latest(path):
+def read_and_comment(path):
     if '.comment.' in path:
         spath = path.split('.comment.')
         path_, comment = spath[0], spath[-1]
