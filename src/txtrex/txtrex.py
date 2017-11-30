@@ -5,7 +5,7 @@ from twisted.names import client, dns, error, server
 class TxtRex(object):
     """
     A resolver which presents a blog to the client through TXT records,
-    interactions and hyperlinking happens through dynamic, made-up TLDs.
+    interaction and hyperlinking happens through dynamic, made-up TLDs.
 
     Example:
         dig @localhost -p 10053 workstation1.example.com TXT +short
@@ -15,7 +15,7 @@ class TxtRex(object):
     _pattern = 'workstation'
     _network = '172.0.2'
 
-    def _dynamicResponseRequired(self, query):
+    def _dynamic_response_required(self, query):
         """
         Check the query to determine if a dynamic response is required.
         """
@@ -25,17 +25,17 @@ class TxtRex(object):
                 return True
         return False
 
-    def _doDynamicResponse(self, query):
+    def _do_dynamic_response(self, query):
         """
         Calculate the response to a query.
         """
         name = str(query.name.name, 'utf-8')
         labels = name.split('.')
         parts = labels[0].split(self._pattern)
-        lastOctet = int(parts[1])
+        last_octet = int(parts[1])
         answer = dns.RRHeader(
             name=name,
-            payload=dns.Record_TXT(bytes('You are looking for: %s.%s' % (self._network, lastOctet), 'utf-8')),
+            payload=dns.Record_TXT(bytes('You are looking for: %s.%s' % (self._network, last_octet), 'utf-8')),
             type=dns.TXT,
         )
         answers = [answer]
@@ -48,8 +48,8 @@ class TxtRex(object):
         Check if the query should be answered dynamically, otherwise dispatch to
         the fallback resolver.
         """
-        if self._dynamicResponseRequired(query):
-            return defer.succeed(self._doDynamicResponse(query))
+        if self._dynamic_response_required(query):
+            return defer.succeed(self._do_dynamic_response(query))
         else:
             return defer.fail(error.DomainError())
 
