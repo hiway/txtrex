@@ -120,6 +120,8 @@ class TxtRex(object):
         for _path in self._routes:
             if path.startswith(_path):
                 return self._routes[_path](path)
+        if '*' in self._routes:
+            return self._routes['*'](path)
         return 'Not found.'
 
 
@@ -144,6 +146,17 @@ def read_post(file_path):
         return infile.readlines()
 
 
+def find_and_read_post(post_path):
+    try:
+        for root, dirs, files in os.walk('posts'):
+            for file_name in files:
+                if post_path in file_name:
+                    return read_post(os.path.join(root, file_name))
+    except:
+        pass
+    return 'Not found.'
+
+
 txtrex = TxtRex()
 
 
@@ -162,8 +175,13 @@ def index(path):
 @txtrex.route('latest')
 def latest(path):
     for root, dirs, files in os.walk('posts'):
-        latest = sorted(files).pop()
-        return read_post(os.path.join(root, latest))
+        latest_post = sorted(files).pop()
+        return read_post(os.path.join(root, latest_post))
+
+
+@txtrex.route('*')
+def latest(path):
+    return find_and_read_post(path)
 
 
 def main():
