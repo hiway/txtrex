@@ -7,10 +7,50 @@ class TxtRex(object):
     A resolver which presents a blog to the client through TXT records,
     interaction and hyperlinking happens through dynamic, made-up TLDs.
 
-    Example:
-        dig @127.0.0.1 -p 10053 TXT +short blog.latest
-        "You asked for: blog.latest"
+    The blog posts are text files in a directory with metadata embedded
+    within the file names as such:
 
+        /posts
+            - 20171201-01-trying.something.silly.txt
+            - 20171201-02-hello.txt
+            - 19831101-blast.from.the.past.txt
+
+    Comments are appended to `comments` directory, with same name as the
+    post it refers to, with extension changed to `.comments.log`. Comments
+    are not published, and can only be read from within the server.
+
+        /posts
+            /comments
+                - 20171201-01-trying.something.silly.comments.log
+
+    Every `*.comments.log` line contains:
+        - timestamp
+        - client-ip
+        - comment
+
+    Examples:
+        $ dig @127.0.0.1 -p 10053 TXT +short blog.latest
+        "# Hello"
+        "This is a test."
+        "Try: blog.index"
+
+        $ dig @127.0.0.1 -p 10053 TXT +short blog.index
+        "Latest: blog.latest"
+        "Recent:"
+        "   blog.hello"
+        "   blog.trying.something.silly"
+
+        $ dig @127.0.0.1 -p 10053 TXT +short blog.trying.something.silly
+        "# Woohoo!"
+        "This actually works?!"
+
+        $ dig @127.0.0.1 -p 10053 TXT +short blog.search.silly
+        "# Search results for: silly"
+        "blog.trying.something.silly # Woohoo!"
+
+        $ dig @127.0.0.1 -p 10053 TXT +short blog.trying.something.silly.comment.this.is.going.too.far
+        "Posted:"
+        "this is going too far"
     """
     _pattern = 'rex'
 
