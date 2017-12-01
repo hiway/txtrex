@@ -216,7 +216,7 @@ def main():
     Run the server.
     """
     parser = argparse.ArgumentParser(description='Publish a "blog" using DNS TXT records.')
-    parser.add_argument('--port', action='store', dest='port', default=10053, type=int)
+    parser.add_argument('-p', '--port', action='store', dest='port', default=10053, type=int, help='Bind to port.')
     args = parser.parse_args()
 
     factory = server.DNSServerFactory(
