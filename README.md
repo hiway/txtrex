@@ -66,3 +66,10 @@ Publish a "blog" using DNS TXT records.
   "# Search results for: silly"
   "rex.trying.something.silly # Woohoo!"
   ```
+
+## Why?
+
+I... needed something to break the coder's block, hence picked 
+something I had not tried before: Twisted. Impressed with the
+simplicity, decided to build something outrageous to get the
+creative juices flowing. Here it is :)
