@@ -38,7 +38,6 @@ class TxtRex(object):
         $ dig @127.0.0.1 -p 10053 TXT +short rex.latest
         "# Hello"
         "This is a test."
-        "Try: rex.index"
 
         $ dig @127.0.0.1 -p 10053 TXT +short rex.index
         "Latest: rex.latest"
