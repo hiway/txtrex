@@ -228,7 +228,7 @@ def main():
 
     reactor.listenUDP(args.port, protocol)
     reactor.listenTCP(args.port, factory)
-
+    print('Serving on: 0.0.0.0:{}'.format(args.port))
     reactor.run()
 
 
