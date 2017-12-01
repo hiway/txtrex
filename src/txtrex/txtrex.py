@@ -88,7 +88,7 @@ class TxtRex(object):
         """
         name = str(query.name.name, 'utf-8')
         path = '.'.join(name.split('.')[1:])
-        response = self.route_to(path)
+        response = self._route_to(path)
         if isinstance(response, str):
             response = [response]
         answers = [self._compose_answer(name, line) for line in response if line.strip()]
@@ -117,7 +117,7 @@ class TxtRex(object):
 
         return wrapper
 
-    def route_to(self, path):
+    def _route_to(self, path):
         if path in self._routes:
             return self._routes[path](path)
         for _path in self._routes:
