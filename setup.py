@@ -41,8 +41,8 @@ setup(
     keywords=[
     ],
     install_requires=[
-        'arrow==0.12.0',
-        'twisted==17.9.0'
+        'arrow',
+        'twisted'
     ],
     entry_points={
         'console_scripts': [
